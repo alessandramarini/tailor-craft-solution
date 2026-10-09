@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Atelier Bridge 100x - La Sartoria del Futuro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-app: #06030a;          
+            --bg-panel: #11091a;
+            --bg-panel-hover: #1a0f26;
+            --text-main: #f8fafc;       
+            --text-muted: #8a77a6;
+            --border-light: #2d1b46;
+            
+            --brand-gold: #d4af37;
+            --brand-gold-glow: rgba(212, 175, 55, 0.2);    
+            --brand-accent: #9333ea;    
+            --brand-glow: rgba(147, 51, 234, 0.35);
+            
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            width: 100%; min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: border-color 0.3s;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--brand-accent), #6b21a8);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 0 15px var(--brand-glow);
+        }
+
+        .input-field {
+            width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border-light);
+            border-radius: 8px; font-family: var(--font-sans); font-size: 0.95rem;
+            background: rgba(0,0,0,0.5); color: white; transition: all 0.2s;
+        }
+        .input-field:focus { outline: none; border-color: var(--brand-accent); box-shadow: 0 0 0 2px var(--brand-glow); }
+        .input-field::placeholder { color: #4b3e61; }
+        select.input-field option { background-color: var(--bg-panel); color: white; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-accent), #6b21a8);
+            color: white; border: none; padding: 12px 24px; border-radius: 8px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px var(--brand-glow);
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--brand-glow); filter: brightness(1.1); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37, #997a15);
+            color: #000; box-shadow: 0 4px 15px var(--brand-gold-glow);
+        }
+        .btn-gold:hover { box-shadow: 0 6px 20px var(--brand-gold-glow); }
+
+        .measure-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: var(--bg-panel); border: 1px solid var(--brand-accent);
+            border-radius: 16px; max-width: 700px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            transform: translateY(20px); transition: transform 0.3s; overflow: hidden;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        .label-text { display: block; text-transform: uppercase; font-size: 10px; color: var(--text-muted); font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px; }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .recalculated { animation: pulse-green 0.8s ease-out; border-color: #22c55e !important; }
+
+        .help-tip { font-size: 0.75rem; color: #a855f7; margin-top: 4px; display: flex; align-items: center; gap: 4px; font-style: italic; }
+
+        /* ================= STAMPA A4 PROFESSIONALE (PREVENTIVO & TODO) ================= */
+        @media print {
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+            /* Nascondi tutta l'interfaccia scura dell'app */
+            body > header, body > main, body > .modal-overlay { display: none !important; }
+            
+            /* Mostra solo il contenitore speciale per la carta */
+            #print-container { display: block !important; position: static !important; }
+            
+            /* Gestione intelligente dei fogli tramite attributi JS */
+            body[data-print-target="preventivo"] .print-todo { display: none !important; }
+            body[data-print-target="todo"] .print-preventivo { display: none !important; }
+
+            @page { size: A4; margin: 15mm; }
+            .a4-sheet { 
+                width: 100%; height: auto; 
+                page-break-inside: avoid; break-inside: avoid;
+                font-family: 'Inter', sans-serif;
+            }
+            .print-title { font-family: 'Playfair Display', serif; font-size: 22pt; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; color: #000; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .print-table th, .print-table td { border: 1px solid #aaa; padding: 12px; text-align: left; color: #000; }
+            .print-table th { background-color: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
+            .print-total { font-size: 16pt; font-weight: bold; text-align: right; margin-top: 20px; color: #000; }
+            .todo-item { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; font-size: 12pt; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #000; }
+            .todo-box { width: 20px; height: 20px; border: 2px solid #000; border-radius: 4px; }
+        }
+        #print-container { display: none; } /* Invisibile durante la navigazione normale */
+    </style>
+</head>
+<body class="p-4 lg:p-6 flex flex-col min-h-screen">
+
+    <header class="w-full max-w-[1400px] mx-auto mb-8 flex flex-col md:flex-row justify-between items-center border-b border-[var(--border-light)] pb-6 gap-6 bg-[#06030a] sticky top-0 z-50 pt-2">
+        <div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-3xl md:text-5xl font-serif font-bold tracking-tight text-white">Atelier <span class="text-[var(--brand-gold)] italic">Bridge</span></h1>
+            </div>
+            <p class="text-sm font-mono text-[var(--text-muted)] tracking-widest uppercase mt-2">Il software per sarti più facile del mondo</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="openModal('modal-data')" class="text-xs font-mono border border-[var(--brand-gold)] text-[var(--brand-gold)] px-5 py-3 rounded-lg font-bold uppercase tracking-wider hover:bg-[var(--brand-gold)] hover:text-black transition">
+                🗄️ Cassa Forte Dati
+            </button>
+            <button onclick="openModal('modal-guide')" class="text-xs font-mono bg-white text-black px-6 py-3 rounded-lg font-bold uppercase tracking-wider hover:bg-gray-200 transition shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                📖 GUIDA PASSO PASSO
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
+        
+        <!-- COLONNA SINISTRA -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- STEP 1: AI STUDIO -->
+            <div class="panel p-6">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h2 class="text-lg font-bold uppercase tracking-widest text-white">Crea l'Idea (AI)</h2>
+                </div>
+                <p class="help-tip mb-4">Scegli come vuoi l'abito. Il computer scriverà per te il "Prompt" (testo magico) da dare all'Intelligenza Artificiale per disegnare la foto!</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="label-text">Stile dell'abito</label>
+                        <select id="ai-style" class="input-field" onchange="generatePrompt(); calculateFabricYield();">
+                            <option value="Haute Couture structured ballgown">Abito a Ruota (Gala)</option>
+                            <option value="Romantic bridal dress">Abito Sposa Romantico</option>
+                            <option value="Sleek minimalist evening gown">Tubino a Sirena (Sera)</option>
+                            <option value="Classic sheath dress">Tubino Classico Corto</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-text">Tessuto desiderato</label>
+                        <select id="ai-fabric" class="input-field" onchange="generatePrompt()">
+                            <option value="intricate 3D lace and heavy silk satin">Pizzo 3D e Raso di Seta</option>
+                            <option value="translucent silk organza and structured tulle">Organza di Seta e Tulle</option>
+                            <option value="liquid metallic fabric and dark velvet">Metallo Liquido e Velluto</option>
+                            <option value="pure linen and organic cotton">Lino e Cotone Naturale</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-text">Colore Principale</label>
+                        <input type="text" id="ai-color" class="input-field" value="Rosso rubino e oro antico" oninput="generatePrompt()" placeholder="Es. Verde Smeraldo...">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="label-text text-[var(--brand-gold)]">IL TUO TESTO MAGICO DA COPIARE:</label>
+                    <textarea id="ai-prompt-output" class="input-field h-28 text-xs text-[var(--brand-accent)] resize-none bg-black" readonly></textarea>
+                    <button onclick="copyPrompt(event)" class="w-full mt-3 btn-primary py-2 text-xs">
+                        Copia Testo per l'AI
+                    </button>
+                </div>
+            </div>
+            
+            <!-- STEP 3: PREVENTIVATORE (Spostato a sinistra per flusso logico) -->
+            <div class="panel p-6 border-[var(--brand-gold)] border-opacity-50 relative overflow-hidden bg-gradient-to-b from-[#11091a] to-[#1a130f]">
+                <div class="step-header relative z-10">
+                    <div class="step-number" style="background: linear-gradient(135deg, #d4af37, #997a15); color: black;">3</div>
+                    <h2 class="text-lg font-bold uppercase tracking-widest text-[var(--brand-gold)]">Preventivo Stoffa</h2>
+                </div>
+                <p class="help-tip mb-4 relative z-10">Il computer guarda il modello (Step 1) e le misure (Step 2) e ti dice quanta stoffa comprare senza sprechi!</p>
+
+                <div class="space-y-4 relative z-10">
+                    <div>
+                        <label class="label-text">Quanto è alto il rotolo di stoffa che vuoi comprare?</label>
+                        <select id="fabric-width" class="input-field" onchange="calculateFabricYield()">
+                            <option value="150">Rotolo Standard: 150 cm</option>
+                            <option value="140">Rotolo Medio: 140 cm</option>
+                            <option value="110">Rotolo Stretto (Seta): 110 cm</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-text">Quanto costa un metro di questa stoffa? (€)</label>
+                        <input type="number" id="fabric-cost" class="input-field text-xl font-bold text-white" value="45" min="0" step="1" oninput="calculateFabricYield()">
+                    </div>
+                </div>
+
+                <div id="calc-result-box" class="mt-6 bg-black border border-[var(--border-light)] rounded-xl p-5 relative z-10 transition-all duration-300">
+                    <div class="flex justify-between items-end border-b border-gray-800 pb-3 mb-3">
+                        <span class="text-xs uppercase tracking-widest text-gray-400">Devi Comprare:</span>
+                        <div class="text-right">
+                            <span id="res-meters" class="text-4xl font-bold font-mono text-white">0.0</span>
+                            <span class="text-sm text-gray-400 font-mono ml-1">metri</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs uppercase tracking-widest text-gray-400">Costo Totale Stoffa:</span>
+                        <div class="text-right">
+                            <span id="res-cost" class="text-2xl font-bold font-mono text-[var(--brand-gold)]">€ 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 5: PREVENTIVO E COMUNICAZIONE -->
+            <div class="panel p-6 border-t-4 border-t-[var(--brand-accent)]">
+                <div class="step-header">
+                    <div class="step-number" style="background: linear-gradient(135deg, #a855f7, #6b21a8);">5</div>
+                    <h2 class="text-lg font-bold uppercase tracking-widest text-white">Preventivo & Messaggio</h2>
+                </div>
+                <p class="help-tip mb-4">Aggiungi la tua manodopera. Crea il PDF ufficiale per il cliente e copia il messaggio già pronto per WhatsApp/Email!</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="label-text">Il tuo compenso / Manodopera (€)</label>
+                        <input type="number" id="labor-cost" class="input-field text-xl font-bold text-white border-[var(--brand-accent)]" value="250" min="0" step="10" oninput="updatePreventivo()">
+                    </div>
+                    
+                    <div class="bg-black/50 p-4 rounded-lg border border-[var(--border-light)]">
+                        <div class="flex justify-between text-sm text-gray-400 mb-1"><span>Tessuto:</span> <span id="prev-fabric-cost">€ 0.00</span></div>
+                        <div class="flex justify-between text-sm text-gray-400 mb-2"><span>Manodopera:</span> <span id="prev-labor-cost">€ 250.00</span></div>
+                        <div class="flex justify-between text-lg font-bold text-white border-t border-gray-700 pt-2">
+                            <span>TOTALE CLIENTE:</span> <span id="prev-total-cost" class="text-[var(--brand-gold)]">€ 0.00</span>
+                        </div>
+                    </div>
+
+                    <button onclick="printPDF('preventivo')" class="w-full btn-primary py-3 flex items-center justify-center gap-2">
+                        📄 SALVA / STAMPA PREVENTIVO (PDF)
+                    </button>
+
+                    <div class="mt-4">
+                        <label class="label-text text-green-400">Messaggio per il Cliente (WhatsApp/Email)</label>
+                        <textarea id="msg-output" class="input-field h-32 text-xs text-gray-300 resize-none bg-black/80" readonly></textarea>
+                        <button onclick="copyMessage(event)" class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-lg text-xs uppercase transition">
+                            Copia Testo Messaggio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLONNA DESTRA -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            
+            <!-- STEP 2: DATABASE CLIENTI -->
+            <div class="panel p-6 flex flex-col flex-1 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-96 h-96 bg-[var(--brand-accent)] opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="step-header justify-between relative z-10 flex-wrap">
+                    <div class="flex items-center gap-12">
+                        <div class="step-number">2</div>
+                        <h2 class="text-lg font-bold uppercase tracking-widest text-white">Misure Cliente (Rubrica)</h2>
+                    </div>
+                    
+                    <!-- Comandi Database -->
+                    <div class="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 bg-black p-2 rounded-lg border border-[var(--border-light)]">
+                        <select id="client-list" class="input-field border-none bg-transparent py-2 px-3 text-sm min-w-[200px]" onchange="loadClient()">
+                            <option value="">+ Nuovo Cliente (Vuoto)</option>
+                            <!-- Popolato da JS -->
+                        </select>
+                        <button onclick="saveClient()" class="btn-primary py-2 px-6">💾 SALVA</button>
+                    </div>
+                </div>
+
+                <p class="help-tip mb-6 relative z-10">Scrivi il nome e le misure. Premi "SALVA" per non perderlo mai più. Poi scegli un cliente salvato dal menu a tendina qui sopra.</p>
+
+                <div class="space-y-6 relative z-10 flex-1">
+                    <div>
+                        <label class="label-text text-[var(--brand-accent)]">NOME COGNOME DEL CLIENTE</label>
+                        <input type="text" id="client-name" class="input-field text-xl font-bold bg-black/60 border-[var(--brand-accent)]" placeholder="Es. Maria Rossi">
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-black/30 p-6 rounded-xl border border-[var(--border-light)]">
+                        <!-- Circonferenze -->
+                        <div>
+                            <h3 class="text-sm font-bold text-white uppercase mb-4 border-b border-[var(--border-light)] pb-2">🔄 Circonferenze (Giri in cm)</h3>
+                            <div class="measure-grid" oninput="calculateFabricYield()">
+                                <div><label class="label-text">Collo</label><input type="number" id="neck_circ" class="input-field" value="38"></div>
+                                <div><label class="label-text">Seno</label><input type="number" id="bust_circ" class="input-field" value="92"></div>
+                                <div><label class="label-text">Sottoseno</label><input type="number" id="underbust_circ" class="input-field" value="78"></div>
+                                <div><label class="label-text">Vita</label><input type="number" id="waist_circ" class="input-field" value="70"></div>
+                                <div><label class="label-text">Fianchi (Bacino)</label><input type="number" id="hip_circ" class="input-field" value="98"></div>
+                                <div><label class="label-text">Braccio (Bicipite)</label><input type="number" id="arm_upper_circ" class="input-field" value="28"></div>
+                            </div>
+                        </div>
+
+                        <!-- Lunghezze -->
+                        <div>
+                            <h3 class="text-sm font-bold text-white uppercase mb-4 border-b border-[var(--border-light)] pb-2">📏 Lunghezze (cm)</h3>
+                            <div class="measure-grid" oninput="calculateFabricYield()">
+                                <div><label class="label-text">Spalla</label><input type="number" id="shoulder_length" class="input-field" value="12"></div>
+                                <div><label class="label-text">Vita Davanti (dal collo)</label><input type="number" id="height_waist_front" class="input-field" value="44"></div>
+                                <div><label class="label-text">Vita Dietro (dal collo)</label><input type="number" id="height_waist_back" class="input-field" value="42"></div>
+                                <div><label class="label-text">Braccio Totale</label><input type="number" id="arm_length" class="input-field" value="58"></div>
+                                <div><label class="label-text">Vita-Ginocchio</label><input type="number" id="height_waist_to_knee" class="input-field" value="60"></div>
+                                <div><label class="label-text">Vita-Pavimento</label><input type="number" id="height_waist_to_floor" class="input-field" value="105"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: ESPORTA PER IL TAGLIO -->
+            <div class="panel p-6 border-l-4 border-l-green-500">
+                <div class="step-header border-none mb-0 pb-0 flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="step-number" style="background: #22c55e;">4</div>
+                        <div>
+                            <h2 class="text-xl font-bold uppercase tracking-widest text-white">Esporta Cartamodello</h2>
+                            <p class="text-xs text-gray-400 mt-1">Crea il file speciale (.vit) da aprire nel tuo programma CAD (Seamly2D).</p>
+                        </div>
+                    </div>
+                    
+                    <button onclick="executeCADWorkflow()" class="mt-4 md:mt-0 w-full md:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all flex items-center justify-center gap-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        CREA FILE .VIT (CAD)
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 6: TO-DO LIST SARTORIALE -->
+            <div class="panel p-6 flex flex-col flex-1">
+                <div class="step-header justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="step-number" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">6</div>
+                        <h2 class="text-lg font-bold uppercase tracking-widest text-white">To-Do List (Gestione Ordine)</h2>
+                    </div>
+                    <button onclick="printPDF('todo')" class="text-xs font-mono border border-blue-500 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">
+                        🖨️ Stampa Scheda
+                    </button>
+                </div>
+                <p class="help-tip mb-4">La tua "Pappa Pronta". Spunta i passaggi per non scordare nulla. Premi SALVA (in alto) per memorizzare i progressi.</p>
+                
+                <div class="space-y-2 mt-2" id="todo-list-container">
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">1. Consulenza iniziale, Scelta Modello e Tessuto</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">2. Presa Misure e Inserimento nel Gestionale</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">3. Invio Preventivo (Tramite App) e Ricezione Acconto</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">4. Acquisto Stoffa e Merceria (Fili, bottoni, cerniere)</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">5. Generazione Cartamodello (CAD) o Cartaceo</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">6. Piazzamento, Taglio su stoffa e Marcatura (Punti lenti)</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">7. Imbastitura e PRIMA PROVA (Controllo vestibilità)</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">8. Sdifettamento e Modifiche al cartamodello/stoffa</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">9. Cucitura, Sorfilatura (Tagliacuci) e Finiture (Orli, Zip)</span></label>
+                    <label class="flex items-center gap-3 p-3 bg-black/40 rounded-lg border border-gray-800 cursor-pointer hover:bg-black/60 transition"><input type="checkbox" class="w-5 h-5 accent-blue-500 rounded"><span class="text-sm font-medium text-gray-200">10. SECONDA PROVA, Stiratura Finale e Consegna</span></label>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ================= MODALI E AIUTI ================= -->
+
+    <!-- MODALE: GUIDA PASSO PASSO -->
+    <div id="modal-guide" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'modal-guide')">
+        <div class="modal-content">
+            <div class="p-6 border-b border-[var(--border-light)] bg-white text-black flex justify-between items-center sticky top-0 z-10">
+                <h3 class="text-xl font-bold uppercase tracking-widest">Guida Semplice per Iniziare</h3>
+                <button onclick="closeModal('modal-guide')" class="text-black hover:text-red-500 text-3xl leading-none font-bold">&times;</button>
+            </div>
+            <div class="p-8 space-y-8 text-gray-300 text-sm leading-relaxed">
+                <div class="bg-black/50 p-6 rounded-xl border border-[var(--brand-accent)]">
+                    <h4 class="text-lg font-bold text-white mb-2 text-[var(--brand-accent)]">Il tuo Database Gratuito (Come funziona?)</h4>
+                    <p>Questo programma è stato creato per essere gratuito. <strong>Tutti i clienti che salvi vengono memorizzati SOLO nel tuo computer</strong> (nella memoria del browser).</p>
+                    <br>
+                    <p class="text-[var(--brand-gold)] font-bold">⚠️ ATTENZIONE: Se formatti il dispositivo o cancelli la cronologia di navigazione, perderai i clienti salvati!</p>
+                    <p class="mt-2"><strong>LA SOLUZIONE:</strong> Usa il pulsante "🗄️ Cassa Forte Dati" in alto. Ti permette di scaricare un piccolo file con tutti i tuoi clienti. Quando vuoi, puoi "importarlo" per riavere tutta la tua rubrica.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-white mb-2">Come usare l'App passo dopo passo:</h4>
+                    <ol class="list-decimal pl-6 space-y-4">
+                        <li><strong>Crea l'idea (Fase 1):</strong> Scegli il vestito. L'app creerà un Prompt. Incollalo nell'Intelligenza Artificiale (es. Midjourney) per il disegno.</li>
+                        <li><strong>Prendi le misure (Fase 2):</strong> Misura la tua cliente. Scrivi il suo nome in alto. <strong>Premi "SALVA"</strong>.</li>
+                        <li><strong>Preventivo (Fasi 3 e 5):</strong> L'app fa i calcoli magici per i metri di stoffa e i costi. Genera il PDF e il messaggio WhatsApp.</li>
+                        <li><strong>Genera il Cartamodello (Fase 4):</strong> Scaricherà un file ".vit". Usalo dentro il programma gratuito <strong>Seamly2D</strong> per stampare il cartamodello.</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="p-4 bg-[#11091a] text-center border-t border-[var(--border-light)]">
+                <button onclick="closeModal('modal-guide')" class="btn-primary w-full max-w-sm">HO CAPITO, INIZIAMO!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE: GESTIONE DATI (CASSA FORTE) -->
+    <div id="modal-data" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'modal-data')">
+        <div class="modal-content border-[var(--brand-gold)]">
+            <div class="p-6 border-b border-[var(--border-light)] bg-gradient-to-r from-[#11091a] to-[#2a2015] flex justify-between items-center">
+                <h3 class="text-xl font-bold uppercase tracking-widest text-[var(--brand-gold)]">🗄️ Cassa Forte Database</h3>
+                <button onclick="closeModal('modal-data')" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- ESPORTA -->
+                <div class="bg-black/50 p-6 rounded-xl border border-gray-700 text-center flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-2">1. Salva al Sicuro</h4>
+                        <p class="text-xs text-gray-400 mb-6">Scarica tutti i tuoi clienti in un file. Fallo periodicamente per sicurezza.</p>
+                    </div>
+                    <button onclick="exportDatabase()" class="btn-gold w-full py-4 text-sm font-bold rounded-lg uppercase">
+                        📥 Scarica File Backup
+                    </button>
+                </div>
+                <!-- IMPORTA -->
+                <div class="bg-black/50 p-6 rounded-xl border border-gray-700 text-center flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-2">2. Ripristina / Importa</h4>
+                        <p class="text-xs text-gray-400 mb-6">Hai cambiato computer? Carica qui il file di backup scaricato in precedenza.</p>
+                    </div>
+                    <input type="file" id="file-import" accept=".json" class="hidden" onchange="importDatabase(event)">
+                    <button onclick="document.getElementById('file-import').click()" class="bg-gray-700 hover:bg-gray-600 text-white w-full py-4 text-sm font-bold rounded-lg uppercase transition">
+                        📤 Carica File Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE: ISTRUZIONI SUCCESSIVE (DOPO IL DOWNLOAD .VIT) -->
+    <div id="modal-workflow" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'modal-workflow')">
+        <div class="modal-content border-green-500">
+            <div class="p-6 text-center border-b border-[var(--border-light)] bg-[#0a1f10]">
+                <div class="w-20 h-20 mx-auto bg-green-500 text-white rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(34,197,94,0.5)]">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-2xl font-serif font-bold text-white mb-2">Misure Esportate!</h3>
+                <p class="text-sm text-gray-300">File creato: <strong class="text-white bg-black px-2 py-1 rounded" id="workflow-filename">misure.vit</strong></p>
+            </div>
+            <div class="p-8 bg-black/80">
+                <h4 class="text-lg font-bold text-[var(--brand-gold)] mb-4">Cosa devi fare ora? (Leggi bene)</h4>
+                <div class="bg-white/10 p-5 rounded-lg mb-6 text-sm text-gray-200">
+                    <p class="mb-2"><strong>Il file si trova nella cartella "Download"</strong> del tuo computer.</p>
+                    <p>Questo file non puoi aprirlo facendoci doppio clic. Devi usare il programma CAD per sarti.</p>
+                </div>
+                <ol class="text-sm text-gray-300 space-y-4 list-decimal pl-5">
+                    <li>Se non lo hai, scarica e installa gratis il CAD per sarti da qui: <a href="https://seamly.net/" target="_blank" class="text-blue-400 underline font-bold">www.seamly.net</a></li>
+                    <li>Apri il programma chiamato <strong>SeamlyMe</strong> (si installa insieme a Seamly2D).</li>
+                    <li>Dentro SeamlyMe vai in alto a sinistra, clicca <strong>File &gt; Apri</strong>.</li>
+                    <li>Scegli il file che hai appena scaricato da qui. Fatto! Avrai il cartamodello su misura.</li>
+                </ol>
+                <div class="mt-8">
+                    <button onclick="closeModal('modal-workflow')" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded-lg uppercase tracking-wider transition">Chiudi e torna al lavoro</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Messaggi Generici -->
+    <div id="modal-alert" class="modal-overlay" style="z-index: 2000;" onclick="closeModalOnOutsideClick(event, 'modal-alert')">
+        <div class="modal-content max-w-sm">
+            <div class="p-5 border-b border-[var(--border-light)] bg-[#11091a]">
+                <h3 class="text-lg font-bold uppercase tracking-widest text-white" id="alert-title">Avviso</h3>
+            </div>
+            <div class="p-6 text-base text-gray-300 leading-relaxed" id="alert-msg"></div>
+            <div class="p-4 bg-black/60 text-center">
+                <button onclick="closeModal('modal-alert')" class="btn-primary w-full">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CONTENITORI DI STAMPA A4 (NASCOSTI A SCHERMO) ================= -->
+    <div id="print-container">
+        <!-- TEMPLATE PREVENTIVO -->
+        <div class="a4-sheet print-preventivo">
+            <div class="print-title">ATELIER BRIDGE - Preventivo Ufficiale</div>
+            
+            <p style="margin-bottom: 5px; color:#000;"><strong>Data:</strong> <span id="print-date"></span></p>
+            <p style="margin-bottom: 20px; color:#000;"><strong>Cliente:</strong> <span id="print-client-name"></span></p>
+            
+            <h3 style="margin-top: 30px; font-size: 14pt; color:#000;">Dettagli Commissione</h3>
+            <p style="color:#000;"><strong>Creazione Sartoriale:</strong> <span id="print-style"></span></p>
+            <p style="color:#000;"><strong>Tessuto Selezionato:</strong> <span id="print-fabric"></span> (<span id="print-color"></span>)</p>
+
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Descrizione Voce</th>
+                        <th style="text-align: right; width: 150px;">Importo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Fornitura Tessuto (Consumo stimato: <span id="print-meters"></span> mt)</td>
+                        <td style="text-align: right;" id="print-cost-fabric">€ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td>Manodopera Sartoriale (Cartamodello, Taglio, Confezione, Prove)</td>
+                        <td style="text-align: right;" id="print-cost-labor">€ 0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="print-total">
+                TOTALE PREVENTIVO: <span id="print-cost-total">€ 0.00</span>
+            </div>
+
+            <div style="margin-top: 60px; font-size: 10pt; color: #555;">
+                <p><em>* Il presente preventivo ha validità 30 giorni.</em></p>
+                <p><em>* Si richiede un acconto del 40% all'accettazione del bozzetto, saldo alla consegna.</em></p>
+                <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                    <div style="width: 250px; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Firma Atelier</div>
+                    <div style="width: 250px; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Firma per Accettazione</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE TO-DO LIST -->
+        <div class="a4-sheet print-todo">
+            <div class="print-title">SCHEDA COMMESSA - Flusso di Lavoro Sartoriale</div>
+            
+            <p style="margin-bottom: 20px; color:#000;"><strong>Cliente:</strong> <span id="print-todo-client"></span></p>
+            <p style="margin-bottom: 30px; font-style: italic; color:#000;">Lista di spunta per garantire la perfezione dall'ideazione alla consegna finale.</p>
+
+            <div class="todo-item"><div class="todo-box"></div> <span>1. Consulenza iniziale, Scelta Modello e Tessuto</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>2. Presa Misure (inserite e salvate nel gestionale)</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>3. Invio Preventivo e Ricezione Acconto confermativo</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>4. Acquisto Stoffa e Merceria (Fili, bottoni, cerniere, telette)</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>5. Creazione Cartamodello (CAD o Cartaceo)</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>6. Piazzamento, Taglio su stoffa e Marcatura (Punti lenti/Gesso)</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>7. Imbastitura dei pezzi principali</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>8. <strong>PRIMA PROVA:</strong> Controllo vestibilità, difetti e lunghezze</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>9. Sdifettamento e Modifiche strutturali</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>10. Cucitura a Macchina, Sorfilatura (Tagliacuci) e Stiratura intermedia</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>11. Applicazione finiture (Orli, fodere interne, cerniere, colletti)</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>12. <strong>SECONDA PROVA:</strong> Verifica e sdifettamento finale</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>13. Stiratura Finale Industriale</span></div>
+            <div class="todo-item"><div class="todo-box"></div> <span>14. Consegna, Ricezione Saldo e Archiviazione Scheda Cliente</span></div>
+        </div>
+    </div>
+
+    <script>
+        // --- FUNZIONI DI BASE MODALI ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function closeModalOnOutsideClick(event, id) { if (event.target === document.getElementById(id)) { closeModal(id); } }
+        
+        function showAlert(title, msg) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-msg').innerText = msg;
+            openModal('modal-alert');
+        }
+
+        // --- GESTIONE DATABASE AVANZATA (LOCALSTORAGE + IMPORT/EXPORT JSON) ---
+        
+        // Salva un cliente nel database del browser
+        function saveClient() {
+            const name = document.getElementById('client-name').value.trim();
+            if(!name) {
+                showAlert("Attenzione", "Devi scrivere il Nome e Cognome del cliente prima di salvare!");
+                return;
+            }
+
+            const measureFields = ['neck_circ', 'bust_circ', 'underbust_circ', 'waist_circ', 'hip_circ', 'arm_upper_circ', 'shoulder_length', 'height_waist_front', 'height_waist_back', 'arm_length', 'height_waist_to_knee', 'height_waist_to_floor'];
+            
+            let clientData = { name: name, date: new Date().toISOString(), measures: {}, todos: [] };
+            measureFields.forEach(id => { clientData.measures[id] = document.getElementById(id).value; });
+
+            // Salva lo stato dei Checkbox To-Do List
+            document.querySelectorAll('#todo-list-container input[type="checkbox"]').forEach(cb => {
+                clientData.todos.push(cb.checked);
+            });
+
+            let clients = JSON.parse(localStorage.getItem('atelier_clients') || '{}');
+            clients[name] = clientData;
+            localStorage.setItem('atelier_clients', JSON.stringify(clients));
+            
+            updateClientList();
+            document.getElementById('client-list').value = name;
+            showAlert("Salvato con Successo!", `Tutti i dati, le misure e lo stato dei lavori di "${name}" sono stati salvati.`);
+        }
+
+        // Aggiorna il menu a tendina
+        function updateClientList() {
+            const select = document.getElementById('client-list');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">+ Nuovo Cliente (Vuoto)</option>';
+            
+            const clients = JSON.parse(localStorage.getItem('atelier_clients') || '{}');
+            for(let name in clients) {
+                const opt = document.createElement('option');
+                opt.value = name; opt.innerText = name;
+                select.appendChild(opt);
+            }
+            if(clients[currentVal]) select.value = currentVal;
+        }
+
+        // Carica i dati nel form quando si sceglie dal menu
+        function loadClient() {
+            const name = document.getElementById('client-list').value;
+            if(!name) {
+                document.getElementById('client-name').value = "";
+                return; 
+            }
+            
+            const clients = JSON.parse(localStorage.getItem('atelier_clients') || '{}');
+            const data = clients[name];
+            if(data) {
+                document.getElementById('client-name').value = data.name;
+                for(let id in data.measures) {
+                    const el = document.getElementById(id);
+                    if(el) el.value = data.measures[id];
+                }
+                
+                // Carica lo stato dei Checkbox To-Do List
+                const checkboxes = document.querySelectorAll('#todo-list-container input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = false); // Resetta tutti
+                if (data.todos) {
+                    data.todos.forEach((isChecked, index) => {
+                        if(checkboxes[index]) checkboxes[index].checked = isChecked;
+                    });
+                }
+
+                calculateFabricYield(); 
+                if(typeof updatePreventivo === 'function') updatePreventivo();
+            }
+        }
+
+        // 📥 FUNZIONE DOWNLOAD BACKUP (SCARICA .JSON)
+        function exportDatabase() {
+            const data = localStorage.getItem('atelier_clients');
+            if(!data || data === '{}') {
+                showAlert("Database Vuoto", "Non hai ancora salvato nessun cliente. Salva un cliente prima di fare il backup.");
+                return;
+            }
+            
+            const blob = new Blob([data], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            const dateStr = new Date().toISOString().split('T')[0];
+            
+            a.href = url;
+            a.download = `Backup_Clienti_Atelier_${dateStr}.json`;
+            document.body.appendChild(a); 
+            a.click();
+            document.body.removeChild(a); 
+            URL.revokeObjectURL(url);
+            
+            closeModal('modal-data');
+            showAlert("Backup Scaricato!", "Il file è nella cartella Download del tuo computer. Custodiscilo con cura.");
+        }
+
+        // 📤 FUNZIONE IMPORTA BACKUP (CARICA .JSON)
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if(typeof importedData === 'object') {
+                        let currentClients = JSON.parse(localStorage.getItem('atelier_clients') || '{}');
+                        let mergedClients = { ...currentClients, ...importedData };
+                        
+                        localStorage.setItem('atelier_clients', JSON.stringify(mergedClients));
+                        updateClientList();
+                        
+                        closeModal('modal-data');
+                        showAlert("Importazione Riuscita!", "I clienti del file di backup sono stati caricati e uniti alla tua rubrica.");
+                    } else {
+                        throw new Error("Formato non valido");
+                    }
+                } catch (error) {
+                    showAlert("Errore", "Il file selezionato non è un backup valido creato da questa applicazione.");
+                }
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
+
+        // --- STEP 1: GENERATORE PROMPT AI ---
+        function generatePrompt() {
+            const style = document.getElementById('ai-style').value;
+            const fabric = document.getElementById('ai-fabric').value;
+            const color = document.getElementById('ai-color').value || "Rosso rubino";
+
+            const prompt = `Fashion photography, a gorgeous fashion model strutting down the runway wearing a breathtaking ${style}, made of ${fabric}. The color palette is strictly ${color}. Cinematic runway lighting, extreme details, haute couture craftsmanship, 8k resolution, photorealistic, Vogue editorial --ar 4:5 --style raw`;
+
+            document.getElementById('ai-prompt-output').value = prompt;
+        }
+
+        function copyPrompt(event) {
+            const textEl = document.getElementById('ai-prompt-output');
+            if(!textEl.value) { generatePrompt(); }
+            textEl.select();
+            
+            try {
+                document.execCommand('copy');
+                const btn = event.currentTarget;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✓ TESTO COPIATO IN MEMORIA';
+                btn.classList.replace('btn-primary', 'btn-gold');
+                setTimeout(() => { 
+                    btn.innerHTML = originalHTML; 
+                    btn.classList.replace('btn-gold', 'btn-primary');
+                }, 2500);
+            } catch (err) {
+                console.error('Errore copia', err);
+            }
+        }
+
+        // --- STEP 3: ALGORITMO CONSUMO TESSUTO E COSTI ---
+        function calculateFabricYield() {
+            const style = document.getElementById('ai-style').value;
+            const fabricWidth = parseFloat(document.getElementById('fabric-width').value) || 150; 
+            const costPerMeter = parseFloat(document.getElementById('fabric-cost').value) || 0;
+            
+            const waist = parseFloat(document.getElementById('waist_circ').value) || 70;
+            const hips = parseFloat(document.getElementById('hip_circ').value) || 98;
+            const lengthToFloor = parseFloat(document.getElementById('height_waist_to_floor').value) || 105;
+            const bodiceLength = parseFloat(document.getElementById('height_waist_front').value) || 44;
+            const sleeveLength = parseFloat(document.getElementById('arm_length').value) || 58;
+
+            let metersNeeded = 0;
+            
+            if (style.includes("ballgown") || style.includes("bridal")) {
+                let radius = waist / (2 * Math.PI);
+                let skirtPieceLength = radius + lengthToFloor + 10; 
+                metersNeeded = (skirtPieceLength * 4) / 100; 
+                metersNeeded += (bodiceLength + sleeveLength + 20) / 100; 
+            } else if (style.includes("sheath dress")) {
+                if ((hips + 10) < fabricWidth) {
+                    metersNeeded = (lengthToFloor + bodiceLength + sleeveLength + 20) / 100;
+                } else {
+                    metersNeeded = ((lengthToFloor + bodiceLength) * 2 + sleeveLength) / 100;
+                }
+            } else {
+                metersNeeded = (lengthToFloor * 2.5 + bodiceLength) / 100;
+            }
+
+            metersNeeded = Math.ceil(metersNeeded * 2) / 2;
+            let totalCost = metersNeeded * costPerMeter;
+
+            const box = document.getElementById('calc-result-box');
+            document.getElementById('res-meters').innerText = metersNeeded.toFixed(1);
+            document.getElementById('res-cost').innerText = `€ ${totalCost.toFixed(2)}`;
+            
+            box.classList.remove('recalculated');
+            void box.offsetWidth; 
+            box.classList.add('recalculated');
+            
+            if(typeof updatePreventivo === 'function') updatePreventivo();
+        }
+
+        // --- STEP 4: ESPORTAZIONE SEAMLY2D (.VIT) ---
+        function executeCADWorkflow() {
+            const rawClientName = document.getElementById('client-name').value || 'Cliente_Senza_Nome';
+            const safeFileName = rawClientName.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_misure.vit';
+            const date = new Date().toISOString().split('T')[0];
+            
+            const measureFields = [
+                'neck_circ', 'bust_circ', 'underbust_circ', 'waist_circ', 'hip_circ', 
+                'arm_upper_circ', 'shoulder_length', 'height_waist_front', 
+                'height_waist_back', 'arm_length', 'height_waist_to_knee', 'height_waist_to_floor'
+            ];
+
+            let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<vit>\n`;
+            xmlContent += `    <!-- Generato da Atelier Bridge CRM 100x -->\n`;
+            xmlContent += `    <version>0.3.3</version>\n`;
+            xmlContent += `    <read-only>false</read-only>\n`;
+            xmlContent += `    <notes>Progetto: ${rawClientName} - Data: ${date}</notes>\n`;
+            xmlContent += `    <unit>cm</unit>\n`;
+            xmlContent += `    <pm_system>998</pm_system>\n`; 
+            xmlContent += `    <personal>\n        <family-name>${rawClientName}</family-name>\n        <given-name></given-name>\n        <birth-date>1990-01-01</birth-date>\n        <gender>unknown</gender>\n        <email></email>\n    </personal>\n`;
+            xmlContent += `    <body-parameters>\n`;
+            
+            measureFields.forEach(id => {
+                const el = document.getElementById(id);
+                if(el && el.value) { xmlContent += `        <m name="@${id}" value="${el.value}"/>\n`; }
+            });
+            
+            xmlContent += `    </body-parameters>\n</vit>`;
+
+            const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = safeFileName;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+
+            document.getElementById('workflow-filename').innerText = safeFileName;
+            openModal('modal-workflow');
+        }
+
+        // --- GESTIONE PREVENTIVO E COMUNICAZIONE ---
+        function updatePreventivo() {
+            const clientName = document.getElementById('client-name').value || '[Nome Cliente]';
+            const styleSelect = document.getElementById('ai-style');
+            const styleRaw = styleSelect.options[styleSelect.selectedIndex].text;
+            const fabricSelect = document.getElementById('ai-fabric');
+            const fabricRaw = fabricSelect.options[fabricSelect.selectedIndex].text;
+            const color = document.getElementById('ai-color').value || 'Tinta Unita';
+            
+            const fabricCost = parseFloat(document.getElementById('res-cost').innerText.replace('€', '').trim()) || 0;
+            const laborCost = parseFloat(document.getElementById('labor-cost').value) || 0;
+            const total = fabricCost + laborCost;
+
+            // Aggiorna Pannello UI
+            document.getElementById('prev-fabric-cost').innerText = `€ ${fabricCost.toFixed(2)}`;
+            document.getElementById('prev-labor-cost').innerText = `€ ${laborCost.toFixed(2)}`;
+            document.getElementById('prev-total-cost').innerText = `€ ${total.toFixed(2)}`;
+
+            // Genera Messaggio Copy-Paste
+            const msg = `Gentile ${clientName},\n\nDi seguito il preventivo ufficiale per la realizzazione su misura della tua creazione sartoriale:\n\n- Modello: ${styleRaw}\n- Tessuto: ${fabricRaw} (${color})\n\nIl costo totale, comprensivo della fornitura dei materiali di prima scelta e della manodopera sartoriale d'eccellenza, è di € ${total.toFixed(2)}.\n\nResto a completa disposizione per qualsiasi dubbio o per procedere ufficialmente con la presa delle misure e il taglio.\n\nA presto,\nLa tua Sarta`;
+            document.getElementById('msg-output').value = msg;
+
+            // Prepara i Dati per la Stampa Nascosta
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('it-IT');
+            document.getElementById('print-client-name').innerText = clientName;
+            document.getElementById('print-todo-client').innerText = clientName;
+            document.getElementById('print-style').innerText = styleRaw;
+            document.getElementById('print-fabric').innerText = fabricRaw;
+            document.getElementById('print-color').innerText = color;
+            document.getElementById('print-meters').innerText = document.getElementById('res-meters').innerText;
+            document.getElementById('print-cost-fabric').innerText = `€ ${fabricCost.toFixed(2)}`;
+            document.getElementById('print-cost-labor').innerText = `€ ${laborCost.toFixed(2)}`;
+            document.getElementById('print-cost-total').innerText = `€ ${total.toFixed(2)}`;
+        }
+
+        function copyMessage(event) {
+            const textEl = document.getElementById('msg-output');
+            textEl.select();
+            try {
+                document.execCommand('copy');
+                const btn = event.currentTarget;
+                const originalText = btn.innerText;
+                btn.innerText = '✓ TESTO COPIATO!';
+                btn.classList.add('bg-green-600');
+                setTimeout(() => { 
+                    btn.innerText = originalText; 
+                    btn.classList.remove('bg-green-600');
+                }, 2500);
+            } catch(e) {}
+        }
+
+        // Motore Stampa Antiproiettile CSS
+        function printPDF(target) {
+            if(target === 'preventivo') updatePreventivo();
+            document.body.setAttribute('data-print-target', target);
+            window.print();
+        }
+
+        // Pulisci l'interfaccia dopo che il PDF è stato generato o annullato
+        window.addEventListener('afterprint', () => {
+            document.body.removeAttribute('data-print-target');
+        });
+
+        // --- INIZIALIZZAZIONE AL CARICAMENTO ---
+        window.onload = function() {
+            updateClientList();
+            generatePrompt();
+            calculateFabricYield();
+            if(typeof updatePreventivo === 'function') updatePreventivo();
+        };
+    </script>
+</body>
+</html>
